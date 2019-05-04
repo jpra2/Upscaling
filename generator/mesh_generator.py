@@ -1,14 +1,13 @@
 import numpy as np
-import os
 import yaml
 from pymoab import core, types, rng, topo_util
 import sys
 
 
-parent_dir = os.path.dirname(os.path.abspath(__file__))
-parent_parent_dir = os.path.dirname(parent_dir)
-input_dir = os.path.join(parent_parent_dir, 'input')
-flying_dir = os.path.join(parent_parent_dir, 'flying')
+# parent_dir = os.path.dirname(os.path.abspath(__file__))
+# parent_parent_dir = os.path.dirname(parent_dir)
+# input_dir = os.path.join(parent_parent_dir, 'input')
+# flying_dir = os.path.join(parent_parent_dir, 'flying')
 # utils_dir = os.path.join(parent_parent_dir, 'utils')
 # mono_dir = os.path.join(flying_dir, 'monofasico')
 # bif_dir = os.path.join(flying_dir, 'bifasico')
@@ -17,7 +16,6 @@ class MeshGenerator:
 
     def __init__(self):
         self.__verif = True
-        os.chdir(input_dir)
         with open("input_mesh_generator.yaml", 'r') as stream:
             data_loaded = yaml.load(stream)
             # data_loaded = yaml.load(stream, Loader=yaml.FullLoader)

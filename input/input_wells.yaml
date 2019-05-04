@@ -1,0 +1,43 @@
+gravity: True
+
+Wells_structured:
+  P1:
+    id: 'I1'
+    type_region: 'box'
+    region1: [0.0, 0.0, 0.0]
+    region2: [20, 10, 60]
+    type_prescription: 'dirichlet'
+    value: 900.0
+    type_well: 'injector'
+    type_fluid: Null
+
+  P2:
+    id: 'P1'
+    type_region: 'box'
+    region1: [540.0, 270.0, 0.0]
+    region2: [560.0, 280.0, 60.0]
+    type_prescription: 'neumann'
+    value: 100.0
+    type_well: 'producer'
+    type_fluid: Null
+
+dados_bifasico:
+  Sor: 0.2
+  Swc: 0.2
+  mi_w: 1.0
+  mi_o: 1.0
+  gama_w: 10.0
+  gama_o: 0.9
+  nwater: 2.0
+  noil: 2.0
+  loops: 1000
+  total_time: 1000
+
+dados_monofasico:
+  mi: 1.0
+  gama: 10
+
+tempos_vpi_impressao: [0.25, 0.5, 0.75, 0.8, 0.9]
+contar_loop: False
+contar_tempo: False
+imprimir_sempre: True

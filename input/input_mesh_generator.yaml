@@ -1,4 +1,4 @@
-file: '28x28x30'
+file_name: '28x28x30'
 
 mesh_size: [560.0, 280.0, 60.0]
 
