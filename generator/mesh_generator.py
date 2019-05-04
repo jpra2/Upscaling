@@ -2,12 +2,14 @@ import numpy as np
 import yaml
 from pymoab import core, types, rng, topo_util
 import sys
+import shutil
+import os
 
 
-# parent_dir = os.path.dirname(os.path.abspath(__file__))
-# parent_parent_dir = os.path.dirname(parent_dir)
-# input_dir = os.path.join(parent_parent_dir, 'input')
-# flying_dir = os.path.join(parent_parent_dir, 'flying')
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+parent_parent_dir = os.path.dirname(parent_dir)
+input_dir = os.path.join(parent_parent_dir, 'input')
+flying_dir = os.path.join(parent_parent_dir, 'flying')
 # utils_dir = os.path.join(parent_parent_dir, 'utils')
 # mono_dir = os.path.join(flying_dir, 'monofasico')
 # bif_dir = os.path.join(flying_dir, 'bifasico')
@@ -15,6 +17,8 @@ import sys
 class MeshGenerator:
 
     def __init__(self):
+        shutil.rmtree(flying_dir)
+        os.makedirs(flying_dir)
         self.__verif = True
         with open("input_mesh_generator.yaml", 'r') as stream:
             data_loaded = yaml.load(stream)
@@ -84,6 +88,8 @@ class MeshGenerator:
         self.tags['AREA'] = self.mb.tag_get_handle('AREA', 1, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
         self.tags['NORMAL'] = self.mb.tag_get_handle('NORMAL', 3, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
         self.tags['BOUND_FACES'] = self.mb.tag_get_handle('BOUND_FACES', 1, types.MB_TYPE_HANDLE, types.MB_TAG_MESH, True)
+        self.tags['PERM'] = self.mb.tag_get_handle('PERM', 9, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
+        self.tags['PHI'] = self.mb.tag_get_handle('PHI', 1, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
 
     def get_all_entities(self):
         self.all_volumes = self.mb.get_entities_by_dimension(0, 3)
@@ -156,6 +162,32 @@ class MeshGenerator:
     def set_gids(self):
         self.mb.tag_set_data(self.tags['GIDV'], self.all_volumes, np.arange(0, len(self.all_volumes)))
         self.mb.tag_set_data(self.tags['GIDF'], self.all_faces, np.arange(0, len(self.all_faces)))
+
+    def set_k_and_phi_structured_spe10(self):
+        os.chdir(input_dir)
+
+        ks = np.load('spe10_perms_and_phi.npz')['perms']
+        phi = np.load('spe10_perms_and_phi.npz')['phi']
+
+        nx = 60
+        ny = 220
+        nz = 85
+        perms = []
+        phis = []
+
+        k = 1.0  #para converter a unidade de permeabilidade
+        centroids=self.all_centroids
+        for i, v in enumerate(self.all_volumes):
+            centroid = centroids[i]
+            ijk = np.array([centroid[0]//20.0, centroid[1]//10.0, centroid[2]//2.0])
+            e = int(ijk[0] + ijk[1]*nx + ijk[2]*nx*ny)
+            # perm = ks[e]*k
+            # fi = phi[e]
+            perms.append(ks[e]*k)
+            phis.append(phi[e])
+
+        self.mb.tag_set_data(self.tags['PERM'], self.all_volumes, perms)
+        self.mb.tag_set_data(self.tags['PHI'], self.all_volumes, phis)
 
     def nblocks():
         doc = "The nblocks property."

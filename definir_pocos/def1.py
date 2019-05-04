@@ -36,6 +36,7 @@ class def_wells:
         mesh_file = name_mesh
         os.chdir(flying_dir)
         self.mb.load_file(mesh_file)
+
         names_tags = np.load('tags_mesh_generator.npy')
         self.tags = utpy.get_all_tags_2(self.mb, names_tags)
         self.gama = data_loaded_wells['dados_monofasico']['gama']

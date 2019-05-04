@@ -31,6 +31,8 @@ def generate_mesh():
     mesh.finish()
     msh = Mesh(mesh.mb, mesh.mtu, mesh.all_volumes, mesh.all_faces, mesh.all_edges, mesh.verts, mesh.tags, mesh.data_loaded)
     os.chdir(flying_dir)
+    with open('__init__.py', 'w') as ff:
+        pass
     file_name = mesh.data_loaded['file_name']
     ext_h5m = file_name + '_mesh1.h5m'
     tags_mesh_generator = np.array(list(mesh.tags.keys()))
