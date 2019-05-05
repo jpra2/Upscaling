@@ -1,5 +1,13 @@
+# nome do arquivo
 file: '28x28x30'
 
+#comprimento total do reservatório
 Ltot: [560.0, 280.0, 60.0]
 
+# comprimento dos blocos da malha fina
 L0: [20.0, 10.0, 2.0]
+
+#comprimento dos blocos das malhas grossas primais
+Ls:
+  L1: [60.0, 30.0, 6.0]
+  L2: [180.0, 90.0, 18.0]

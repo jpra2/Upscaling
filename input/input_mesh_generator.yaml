@@ -1,5 +1,13 @@
+# nome do arquivo
 file_name: '28x28x30'
 
+# tamanho total do reservatorio
 mesh_size: [560.0, 280.0, 60.0]
 
+# numero de blocos na malha fina
 nblocks: [28, 28, 30]
+
+# comprimento dos blocos das malhas grossas primais
+Ls:
+  L1: [60.0, 30.0, 6.0]
+  L2: [180.0, 90.0, 18.0]
