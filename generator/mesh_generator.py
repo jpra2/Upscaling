@@ -25,6 +25,11 @@ class MeshGenerator:
             # data_loaded = yaml.load(stream, Loader=yaml.FullLoader)
             # data_loaded = yaml.full_load(stream)
 
+        with open("input_wells.yaml", 'r') as stream:
+            data_wells = yaml.load(stream)
+            # data_loaded = yaml.load(stream, Loader=yaml.FullLoader)
+            # data_loaded = yaml.full_load(stream)
+
         self.data_loaded = data_loaded
         self.tags = dict()
         self.mb = core.Core()
@@ -36,6 +41,8 @@ class MeshGenerator:
         hy = self.blocksize[1]
         hz = self.blocksize[2]
         self.Area = np.array([hy*hz, hx*hz, hy*hx])
+        self.mi = data_wells['dados_monofasico']['mi']
+        self.gama = data_wells['dados_monofasico']['gama']
 
     def create_fine_vertices(self):
 
@@ -55,13 +62,6 @@ class MeshGenerator:
         self.ind_verts = np.arange(1,len(self.verts)+1).astype(np.uint64)
 
     def create_fine_blocks(self):
-        # hexas = []
-        # for i in range(self.nblocks[0]):
-        #     for j in range(self.nblocks[1]):
-        #         for k in range(self.nblocks[2]):
-        #             hexa = self.create_hexa(i, j, k)
-        #             hexas.append(hexa)
-
         hexas = np.array([self.create_hexa(i, j, k) for i in range(self.nblocks[0])
                  for j in range(self.nblocks[1])
                  for k in range(self.nblocks[2])])
@@ -90,12 +90,57 @@ class MeshGenerator:
         self.tags['BOUND_FACES'] = self.mb.tag_get_handle('BOUND_FACES', 1, types.MB_TYPE_HANDLE, types.MB_TAG_MESH, True)
         self.tags['PERM'] = self.mb.tag_get_handle('PERM', 9, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
         self.tags['PHI'] = self.mb.tag_get_handle('PHI', 1, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
+        self.tags['KEQ'] = self.mb.tag_get_handle('KEQ', 1, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
+        self.tags['SGRAVF'] = self.mb.tag_get_handle('SGRAVF', 1, types.MB_TYPE_DOUBLE, types.MB_TAG_SPARSE, True)
 
     def get_all_entities(self):
         self.all_volumes = self.mb.get_entities_by_dimension(0, 3)
         self.mtu.construct_aentities(self.verts)
         self.all_faces = self.mb.get_entities_by_dimension(0, 2)
         self.all_edges = self.mb.get_entities_by_dimension(0, 1)
+
+    def get_kequiv_by_face_quad(self):
+        """
+        retorna os valores de k equivalente para colocar na matriz
+        a partir da face
+
+        input:
+            face: face do elemento
+        output:
+            kequiv: k equivalente
+            elems: elementos vizinhos pela face
+            s: termo fonte da gravidade
+        """
+        centroids = self.all_centroids
+        ks = self.mb.tag_get_data(self.tags['PERM'], self.all_volumes)
+        vol_to_pos = dict(zip(self.all_volumes,range(len(self.all_volumes))))
+        K_eq = np.zeros(len(self.faces_in))
+        areas = self.mb.tag_get_data(self.tags['AREA'], self.faces_in, flat=True)
+        s_gravs = K_eq.copy()
+
+        for i, f in enumerate(self.faces_in):
+            adjs = self.Adjs_in[i]
+            area = areas[i]
+            v1 = adjs[0]
+            v2 = adjs[1]
+            k1 = ks[vol_to_pos[v1]].reshape([3, 3])
+            k2 = ks[vol_to_pos[v2]].reshape([3, 3])
+            centroid1 = centroids[vol_to_pos[v1]]
+            centroid2 = centroids[vol_to_pos[v2]]
+            direction = centroid2 - centroid1
+            norm = np.linalg.norm(direction)
+            uni = np.absolute(direction/norm)
+            k1 = np.dot(np.dot(k1,uni), uni)
+            k2 = np.dot(np.dot(k2,uni), uni)
+            k_harm = (2*k1*k2)/(k1+k2)
+            area = areas[i]
+            keq = k_harm*area/(self.mi*norm)
+            s_gr = self.gama*keq*(centroid2[2]-centroid1[2])
+            s_gravs[i] = s_gr
+            K_eq[i] = keq
+
+        self.mb.tag_set_data(self.tags['KEQ'], self.faces_in, K_eq)
+        self.mb.tag_set_data(self.tags['SGRAVF'], self.faces_in, s_gravs)
 
     def finish(self):
         self.__verif = False
@@ -152,6 +197,13 @@ class MeshGenerator:
         self.mb.add_entities(bound_faces, bfs)
         self.mb.tag_set_data(self.tags['BOUND_FACES'], 0, bound_faces)
         self.bound_faces = bfs
+        self.faces_in = rng.subtract(self.all_faces, bfs)
+        self.Adjs_in = np.array([np.array(self.mb.get_adjacencies(f, 3)) for f in self.faces_in])
+        Adjs_d = self.Adjs_in[:,1]
+        Adjs_e = self.Adjs_in[:,0]
+        os.chdir(flying_dir)
+        np.save('Adjs_d', Adjs_d)
+        np.save('Adjs_e', Adjs_e)
 
     def set_centroids(self):
         all_centroids = np.array([self.mtu.get_average_position([v]) for v in self.all_volumes])

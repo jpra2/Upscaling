@@ -13,5 +13,3 @@ def run():
 
 
     print('saiu def_wells')
-
-    import pdb; pdb.set_trace()

@@ -28,6 +28,8 @@ def generate_mesh():
     mesh.set_gids()
     mesh.set_centroids()
     mesh.set_area()
+    mesh.set_k_and_phi_structured_spe10()
+    mesh.get_kequiv_by_face_quad()
     mesh.finish()
     msh = Mesh(mesh.mb, mesh.mtu, mesh.all_volumes, mesh.all_faces, mesh.all_edges, mesh.verts, mesh.tags, mesh.data_loaded)
     os.chdir(flying_dir)
